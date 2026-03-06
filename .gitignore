@@ -1,0 +1,24 @@
+# Compiled binary
+nettrace
+
+# Build outputs
+dist/
+build/
+bin/
+
+# Go test artifacts
+*.test
+*.out
+coverage.out
+
+# IDE folders
+.vscode/
+.idea/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Local environment files
+.env
+.env.*
