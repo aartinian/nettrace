@@ -1,3 +1,3 @@
 module github.com/aartinian/nettrace
 
-go 1.22.12
+go 1.24
