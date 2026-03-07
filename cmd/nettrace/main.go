@@ -98,21 +98,31 @@ func run(args []string, stdout io.Writer, stderr io.Writer) int {
 	if err != nil {
 		var usageErr *util.UsageError
 		if errors.As(err, &usageErr) {
-			fmt.Fprintf(stderr, "Error: %s\n\n", err)
-			printUsage(stderr)
+			if _, writeErr := fmt.Fprintf(stderr, "Error: %s\n\n", err); writeErr != nil {
+				return exitCodeError
+			}
+			if writeErr := printUsage(stderr); writeErr != nil {
+				return exitCodeError
+			}
 			return exitCodeUsage
 		}
 
-		fmt.Fprintf(stderr, "Error: %v\n", err)
+		if _, writeErr := fmt.Fprintf(stderr, "Error: %v\n", err); writeErr != nil {
+			return exitCodeError
+		}
 		return exitCodeError
 	}
 	if showHelp {
-		printUsage(stdout)
+		if err := printUsage(stdout); err != nil {
+			return exitCodeError
+		}
 		return exitCodeOK
 	}
 
 	if showVersion {
-		fmt.Fprintln(stdout, version)
+		if _, err := fmt.Fprintln(stdout, version); err != nil {
+			return exitCodeError
+		}
 		return exitCodeOK
 	}
 
@@ -120,12 +130,18 @@ func run(args []string, stdout io.Writer, stderr io.Writer) int {
 	if err != nil {
 		var usageErr *util.UsageError
 		if errors.As(err, &usageErr) {
-			fmt.Fprintf(stderr, "Error: %s\n\n", err)
-			printUsage(stderr)
+			if _, writeErr := fmt.Fprintf(stderr, "Error: %s\n\n", err); writeErr != nil {
+				return exitCodeError
+			}
+			if writeErr := printUsage(stderr); writeErr != nil {
+				return exitCodeError
+			}
 			return exitCodeUsage
 		}
 
-		fmt.Fprintf(stderr, "Error: %v\n", err)
+		if _, writeErr := fmt.Fprintf(stderr, "Error: %v\n", err); writeErr != nil {
+			return exitCodeError
+		}
 		return exitCodeError
 	}
 
@@ -135,7 +151,9 @@ func run(args []string, stdout io.Writer, stderr io.Writer) int {
 		err = appformat.RenderTable(stdout, summary)
 	}
 	if err != nil {
-		fmt.Fprintf(stderr, "Error: %v\n", err)
+		if _, writeErr := fmt.Fprintf(stderr, "Error: %v\n", err); writeErr != nil {
+			return exitCodeError
+		}
 		return exitCodeError
 	}
 
@@ -208,24 +226,26 @@ func parseConfig(args []string) (app.Config, bool, bool, error) {
 }
 
 // printUsage prints CLI help text.
-func printUsage(w io.Writer) {
-	fmt.Fprintln(w, "Usage:")
-	fmt.Fprintln(w, "  nettrace [flags] <url>")
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "Examples:")
-	fmt.Fprintln(w, "  nettrace https://example.com")
-	fmt.Fprintln(w, "  nettrace --repeat 5 --json https://api.example.com/health")
-	fmt.Fprintln(w)
-	fmt.Fprintln(w, "Flags:")
-	fmt.Fprintln(w, "  --method string         HTTP method (default GET)")
-	fmt.Fprintln(w, "  --header \"K: V\"        Request header (repeatable)")
-	fmt.Fprintln(w, "  --timeout duration      Total timeout (default 10s)")
-	fmt.Fprintln(w, "  --connect-timeout duration")
-	fmt.Fprintln(w, "                          TCP connect timeout (default 3s)")
-	fmt.Fprintln(w, "  --redirects int         Max redirects (default 3)")
-	fmt.Fprintln(w, "  --repeat int            Repeat request N times")
-	fmt.Fprintln(w, "  --json                  Output JSON")
-	fmt.Fprintln(w, "  --insecure              Skip TLS verification")
-	fmt.Fprintln(w, "  --no-keepalive          Disable connection reuse")
-	fmt.Fprintln(w, "  --version               Print version")
+func printUsage(w io.Writer) error {
+	_, err := io.WriteString(w, `Usage:
+  nettrace [flags] <url>
+
+Examples:
+  nettrace https://example.com
+  nettrace --repeat 5 --json https://api.example.com/health
+
+Flags:
+  --method string         HTTP method (default GET)
+  --header "K: V"        Request header (repeatable)
+  --timeout duration      Total timeout (default 10s)
+  --connect-timeout duration
+                          TCP connect timeout (default 3s)
+  --redirects int         Max redirects (default 3)
+  --repeat int            Repeat request N times
+  --json                  Output JSON
+  --insecure              Skip TLS verification
+  --no-keepalive          Disable connection reuse
+  --version               Print version
+`)
+	return err
 }
